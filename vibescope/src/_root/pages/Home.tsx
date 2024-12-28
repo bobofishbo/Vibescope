@@ -1,8 +1,7 @@
 const Home = () => {
     return (
-        <div>Sigma boy</div>
+        <div>Home</div>
     )
 
 }
-
 export default Home
