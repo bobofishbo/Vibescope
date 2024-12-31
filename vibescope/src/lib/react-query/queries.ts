@@ -1,4 +1,4 @@
-import { INewPost, INewUser, IUpdatePost } from '@/types'
+import { INewPost, INewUser, IUpdatePost, IUpdateUser } from '@/types'
 import {
     useMutation,
     useQuery,
@@ -18,6 +18,12 @@ import {
   getPostById,
   updatePost,
   deletePost,
+  getUserPosts,
+  getUsers,
+  getUserById,
+  updateUser,
+  searchPosts,
+  getInfinitePosts,
 
 } from '../appwrite/api'
 import { QUERY_KEYS } from './queryKeys';
@@ -129,6 +135,34 @@ export const useDeleteSavedPost = () => {
 };
 
 
+export const useGetPosts = () => {
+  return useInfiniteQuery({
+    queryKey: [QUERY_KEYS.GET_INFINITE_POSTS],
+    queryFn: ({ pageParam = undefined }: { pageParam?: number }) =>
+      getInfinitePosts({ pageParam }),
+    getNextPageParam: (lastPage) => {
+      // Use the cursor for the next page
+      if (lastPage && lastPage.documents.length > 0) {
+        const lastId = lastPage.documents[lastPage.documents.length - 1].$id;
+        return parseInt(lastId, 10); // Ensure it’s returned as a number
+      }
+      return null; // No more pages
+    },
+    initialPageParam: undefined,
+  });
+};
+
+
+
+export const useSearchPosts = (searchTerm: string) => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.SEARCH_POSTS, searchTerm],
+    queryFn: () => searchPosts(searchTerm),
+    enabled: !!searchTerm,
+  });
+};
+
+
 // ============================================================
 // USER QUERIES
 // ============================================================
@@ -145,12 +179,15 @@ export const useGetPostById = (postId?: string) => {
   return useQuery({
     queryKey: [QUERY_KEYS.GET_POST_BY_ID, postId],
     queryFn: () => {
-      if (!postId) throw new Error("postId is required");
-      return getPostById(postId); // Ensure it's only called with a valid string
+      if (!postId || postId.trim() === "" || postId.startsWith("_")) {
+        throw new Error("Invalid postId: Ensure it is a valid non-empty string.");
+      }
+      return getPostById(postId);
     },
-    enabled: !!postId,
+    enabled: !!postId, // Only run the query if postId is truthy
   });
 };
+
 
 export const useUpdatePost = () => {
   const queryClient = useQueryClient();
@@ -177,32 +214,41 @@ export const useDeletePost = () => {
   });
 };
 
-// export const useGetUsers = (limit?: number) => {
-//   return useQuery({
-//     queryKey: [QUERY_KEYS.GET_USERS],
-//     queryFn: () => getUsers(limit),
-//   });
-// };
+export const useGetUsers = (limit?: number) => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.GET_USERS],
+    queryFn: () => getUsers(limit),
+  });
+};
 
-// export const useGetUserById = (userId: string) => {
-//   return useQuery({
-//     queryKey: [QUERY_KEYS.GET_USER_BY_ID, userId],
-//     queryFn: () => getUserById(userId),
-//     enabled: !!userId,
-//   });
-// };
+export const useGetUserById = (userId: string) => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.GET_USER_BY_ID, userId],
+    queryFn: () => getUserById(userId),
+    enabled: !!userId,
+  });
+};
 
-// export const useUpdateUser = () => {
-//   const queryClient = useQueryClient();
-//   return useMutation({
-//     mutationFn: (user: IUpdateUser) => updateUser(user),
-//     onSuccess: (data) => {
-//       queryClient.invalidateQueries({
-//         queryKey: [QUERY_KEYS.GET_CURRENT_USER],
-//       });
-//       queryClient.invalidateQueries({
-//         queryKey: [QUERY_KEYS.GET_USER_BY_ID, data?.$id],
-//       });
-//     },
-//   });
-// };
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (user: IUpdateUser) => updateUser(user),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.GET_CURRENT_USER],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.GET_USER_BY_ID, data?.$id],
+      });
+    },
+  });
+};
+
+
+export const useGetUserPosts = (userId?: string) => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.GET_USER_POSTS, userId],
+    queryFn: () => getUserPosts(userId),
+    enabled: !!userId,
+  });
+};
