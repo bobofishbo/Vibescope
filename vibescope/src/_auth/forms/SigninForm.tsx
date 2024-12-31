@@ -13,6 +13,7 @@ import { useSignInAccount } from "@/lib/react-query/queries";
 import { SigninValidation } from "@/lib/validation";
 import { useUserContext } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { account } from "@/lib/appwrite/config";
 
 
 
@@ -32,7 +33,9 @@ const SigninForm = () => {
             password: "",
         },
     })
-    
+
+
+      
     // 2. Define a submit handler.
     async function onSubmit(values: z.infer<typeof SigninValidation>) {
         const session = await signInAccount({
@@ -42,6 +45,12 @@ const SigninForm = () => {
         })
 
         if (!session){
+            try {
+                await account.deleteSession("current");
+                console.log("Current session cleared.");
+              } catch (error) {
+                console.error("Error clearing the current session:", error);
+              }              
             return toast({title: 'Sign in failed. Please try again.'})
         }
 

@@ -31,6 +31,7 @@ const SignupForm = () => {
             password: "",
         },
     });
+    
 
     async function onSubmit(values: z.infer<typeof SignupValidation>) {
         const newUser = await createUserAccount(values);
@@ -42,12 +43,6 @@ const SignupForm = () => {
             console.error("Error fetching active sessions:", error);
         }
 
-        if (!newUser) {
-            return toast({
-                title: "Sign up failed, please try again",
-            });
-        }
-
         const session = await signInAccount({
             email: values.email,
             password: values.password,
@@ -55,8 +50,14 @@ const SignupForm = () => {
 
         console.log("New Session:", session);
 
-        if (!session) {
-            return toast({ title: "Sign in failed. Please try again." });
+        if (!session || !newUser) {
+            try {
+                await account.deleteSession("current");
+                console.log("Current session cleared.");
+              } catch (error) {
+                console.error("Error clearing the current session:", error);
+              }
+            return toast({ title: "Sign up failed. Please try again." });
         }
 
         const isLoggedIn = await checkAuthUser();
