@@ -138,19 +138,20 @@ export const useDeleteSavedPost = () => {
 export const useGetPosts = () => {
   return useInfiniteQuery({
     queryKey: [QUERY_KEYS.GET_INFINITE_POSTS],
-    queryFn: ({ pageParam = undefined }: { pageParam?: number }) =>
-      getInfinitePosts({ pageParam }),
+    queryFn: ({ pageParam = "" }: { pageParam: string }) =>
+      getInfinitePosts({ pageParam }), // Pass pageParam to your function
     getNextPageParam: (lastPage) => {
-      // Use the cursor for the next page
-      if (lastPage && lastPage.documents.length > 0) {
-        const lastId = lastPage.documents[lastPage.documents.length - 1].$id;
-        return parseInt(lastId, 10); // Ensure it’s returned as a number
+      if (lastPage.documents.length === 0) {
+        return null; // No more pages
       }
-      return null; // No more pages
+      // Use the last document's $id as the next cursor
+      return lastPage.documents[lastPage.documents.length - 1].$id;
     },
-    initialPageParam: undefined,
+    initialPageParam: "", // Set the initial value of pageParam
   });
 };
+
+
 
 
 

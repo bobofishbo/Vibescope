@@ -216,12 +216,12 @@ export async function getRecentPosts(){
   return posts;
 }
 
-export async function getInfinitePosts({ pageParam }: { pageParam?: number }) {
+export async function getInfinitePosts({ pageParam }: { pageParam: string }) {
+  console.log("Cursor (pageParam):", pageParam); // Debug log for the cursor
   const queries: any[] = [Query.orderDesc("$updatedAt"), Query.limit(9)];
 
-  // Ensure pageParam is converted to string if present
-  if (pageParam !== undefined) {
-    queries.push(Query.cursorAfter(pageParam.toString()));
+  if (pageParam) {
+    queries.push(Query.cursorAfter(pageParam));
   }
 
   try {
@@ -231,12 +231,12 @@ export async function getInfinitePosts({ pageParam }: { pageParam?: number }) {
       queries
     );
 
-    if (!posts) throw new Error("No posts found");
+    if (!posts) throw new Error("No posts returned");
 
     return posts;
   } catch (error) {
-    console.log("Error fetching posts:", error);
-    throw error; // Throw the error so React Query can handle it
+    console.error("Error fetching posts:", error);
+    throw error; // Rethrow the error to be caught by the infinite query
   }
 }
 
